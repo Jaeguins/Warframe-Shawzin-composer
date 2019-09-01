@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+	<header>
+	<title>워프레임 샤진 악보 제조기</title>
+	<meta charset="UTF-8">
+	</header>
+	<body>
+		<div>
+			<p>워프레임 샤진 악보 제조기</p>
+		</div>
+		<div id="table" class="gridContainer">
+		<div class="grid" style="width : 90px">
+		하늘프렛</br>
+		 땅 프렛</br>
+		 물 프렛</br>
+		 1번 현</br>
+		 2번 현</br>
+		 3번 현</br>
+		</div>
+		</div>
+		<div>
+		음계
+		<input id= "chord" type=number min="1" max="8" value=1></input>
+		<button id="export" type=button onclick="encode();">익스포트</button>
+		<button id="import" type=button onclick="decode();">임포트</button>
+		<button id="clearer" type=button onclick="clearer();">전체삭제</button>
+		</div>
+		<div>
+			<textarea id="result" rows="10"></textarea>
+		</div>
+		
+		
+		<script>
+		var data = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+		var notes = "BRhJCSKEUkiM";
+		var endPoint=4096;
+		function clearer(){
+			clear();
+		}
+		
+		function clear(){
+			//console.log("전체삭제");
+			for(var i =0;i<endPoint;i++){
+				setValue(i,0,0);
+				setValue(i,1,0);
+			}
+		}
+		
+		function generateOneNoteUI(index){
+			var cell=document.createElement("div");
+			cell.id="noteCell_"+index;
+			if(index%4==3){
+				cell.className="gridSep";
+			}else{
+				cell.className="grid";
+			}
+			var table=document.getElementById("table");
+			for(var j=0;j<2;j++){
+				for(var i=0;i<3;i++){
+					var tNote=document.createElement("input");
+					tNote.id="node_"+index+"_"+j+"_"+i;
+					tNote.type="checkBox";
+					tNote.className="note";
+					cell.appendChild(tNote);
+				}
+			}
+			table.appendChild(cell);
+		}
+		function getValueSum(index){
+			return getValue(index,1)+getValue(index,0)*8;
+		}
+		function getValue(index,type){
+			var t=1;
+			var ret=0;
+			for(var i=0;i<3;i++){
+				var field=getCheckBox(index, type, i);
+				if(field.checked)ret+=t;
+				t*=2;
+			}
+			return ret;
+		}
+		function setValueSum(index,value){
+			setValue(index,0,parseInt(value/8));
+			setValue(index,1,parseInt(value%8));
+		}
+		function setValue(index,type,value){
+			for(var i=0;i<3;i++){
+				getCheckBox(index,type,i).checked=(value%2==1);
+				value=parseInt(value/2);
+			}
+		}
+		function getCheckBox(index, type, value){
+			return document.getElementById("node_"+index+"_"+type+"_"+value);
+		}
+		
+		function encode(){
+			var output=document.getElementById("result");
+			output.value=document.getElementById("chord").value;
+			
+			for(var i=0;i<=endPoint;i++){
+				var noteValue="";
+				noteValue+=data[getValueSum(i)];
+				if(data[getValueSum(i)]=='A')continue;
+				noteValue+=data[parseInt(i/64)];
+				noteValue+=data[i%64];
+				output.value+=noteValue;
+			}
+		}
+		function decode(){
+			clear();
+			var input=document.getElementById("result").value;
+			var index=0;
+			document.getElementById("chord").value=input[index];
+			index+=1;
+			while(index<input.length){
+				var noteValue=input[index];
+				index++;
+				var timingA=input[index];
+				index++;
+				var timingB=input[index];
+				index++;
+				var timing=data.indexOf(timingA)*64+data.indexOf(timingB);
+				setValueSum(timing,data.indexOf(noteValue));
+			}
+			
+		}
+		
+		(function() {
+			function scrollHorizontally(e) {
+				e = window.event || e;
+				var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)));
+				document.getElementById("table").scrollLeft -= (delta*40); // Multiplied by 40
+				e.preventDefault();
+			}
+			if (document.getElementById("table").addEventListener) {
+				// IE9, Chrome, Safari, Opera
+				document.getElementById("table").addEventListener("mousewheel", scrollHorizontally, false);
+				// Firefox
+				document.getElementById("table").addEventListener("DOMMouseScroll", scrollHorizontally, false);
+			} else {
+				// IE 6/7/8
+				document.getElementById("table").attachEvent("onmousewheel", scrollHorizontally);
+			}
+		})();
+		
+		
+		
+		for(var i=0;i<endPoint;i++){
+			generateOneNoteUI(i);
+		}
+		</script>
+		<style>
+			div{
+				border : 1px solid;
+			}
+			.gridContainer{
+				height : 220px;
+				width : 100%;
+				overflow-x : scroll;
+				white-space: nowrap;
+			}
+			.grid{
+				padding : 0px;
+				width : 20px;
+				height : 200px;
+				display : inline-block;
+				white-space : normal;
+			}
+			.note{
+				margin : 0px;
+				width : 15px;
+				height : 15px;
+			}
+			.gridSep{
+				padding : 0px;
+				width : 20px;
+				height : 200px;
+				display : inline-block;
+				white-space : normal;
+				background-color : blue;
+			}
+			input{
+				border : 1px solid;
+			}
+			textarea{
+				width : 100%;
+			}
+		</style>
+	</body>
+</html>
